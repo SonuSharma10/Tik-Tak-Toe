@@ -1,0 +1,18 @@
+const express = require('express');
+const app = express();
+const cors = require('cors');
+const dotenv = require('dotenv');
+dotenv.config();
+app.use(cors());
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+const connectDB = require('./config/db');
+connectDB();
+
+app.use('/user', require('./routes/login'));
+app.use('/user', require('./routes/register'));
+
+const port = 3000;
+app.listen(port, () => console.log('App listening on port', port));
