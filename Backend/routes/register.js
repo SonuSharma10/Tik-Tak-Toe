@@ -1,4 +1,4 @@
-const User = require('../config/schema');
+const { Game, User } = require('../config/schema');
 const bcrypt = require('bcryptjs');
 const router = require('express').Router();
 const jwt = require('jsonwebtoken');
