@@ -67,8 +67,25 @@ function startWebSocketServer() {
         return;
       }
 
+      // Check if user is already in a game
+      const existingGame = await Game.findOne({
+        'players.userId': userId,
+        status: { $in: ['waiting', 'in_progress'] },
+      });
+
+      if (existingGame) {
+        ws.send(
+          JSON.stringify({
+            type: 'error',
+            message: 'You are already in a game',
+          })
+        );
+        return;
+      }
+
       const availableRoom = await Game.findOne({
         status: 'waiting',
+        'players.userId': { $ne: userId }, // Ensure user is not already in the room
       });
 
       if (availableRoom) {
@@ -327,19 +344,26 @@ function startWebSocketServer() {
   async function handleDisconnect(ws, wss) {
     try {
       const room = await Game.findOne({ roomCode: ws.roomCode });
-      if (room && room.status === 'in_progress') {
-        room.status = 'completed';
-        const remainingPlayer = room.players.find(
-          (player) => player.userId.toString() !== ws.userId
-        );
-        if (remainingPlayer) {
-          room.winner = remainingPlayer.userId;
+      if (room) {
+        if (room.status === 'in_progress') {
+          room.status = 'completed';
+          const remainingPlayer = room.players.find(
+            (player) => player.userId.toString() !== ws.userId
+          );
+          if (remainingPlayer) {
+            room.winner = remainingPlayer.userId;
+          }
+          room.completedAt = new Date();
         }
-        room.completedAt = new Date();
+
+        // Remove the disconnected player
+        room.players = room.players.filter((player) => player.userId.toString() !== ws.userId);
+
         await room.save();
 
+        // Notify remaining player if exists
         const remainingPlayerWs = Array.from(wss.clients).find(
-          (client) => client.userId === remainingPlayer?.userId.toString()
+          (client) => client.userId === room.players[0]?.userId.toString()
         );
 
         if (remainingPlayerWs) {
@@ -349,6 +373,12 @@ function startWebSocketServer() {
               data: 'The other player has disconnected. You win!',
             })
           );
+
+          // Allow the remaining player to join new games
+          remainingPlayerWs.roomCode = null;
+          remainingPlayerWs.userId = null;
+          remainingPlayerWs.username = null;
+          remainingPlayerWs.symbol = null;
         }
       }
     } catch (error) {
