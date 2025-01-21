@@ -3,7 +3,7 @@ const { Game, User } = require('../config/schema');
 const mongoose = require('mongoose');
 
 function generateRoomCode() {
-  return Math.random().toString(36).substring(2, 8);
+  return Math.random().toString(36).substring(2, 10);
 }
 
 function startWebSocketServer() {
@@ -18,21 +18,22 @@ function startWebSocketServer() {
         switch (data.type) {
           case 'connect':
             await handleConnect(ws, data, wss);
+            // ws connecting method {"type":"connect","userId":"678e5d5034b9824afdb95ef1"}
             break;
           case 'move':
             await handleMove(ws, data, timestamp, wss);
+            // ws move method {"type":"move","index":0 to 9 any number}
             break;
           case 'reset':
             await handleReset(ws, wss);
-            break;
-          case 'exit':
-            await handleExit(ws, wss);
+            // ws reset method {"type":"reset"}
             break;
           default:
             ws.send(
               JSON.stringify({
                 type: 'error',
-                message: 'Invalid message type',
+                message:
+                  'Invalid message type for connect = {"type":"connect", "userId":"678e5d5034b9824afdb95ef1"} \n move = {"type":"move","index":0 to 9 any number} \n reset = {"type":"reset"}',
               })
             );
         }
@@ -165,7 +166,7 @@ function startWebSocketServer() {
       ws.send(
         JSON.stringify({
           type: 'error',
-          message: 'Failed to create/join room',
+          message: 'Failed to create room. May be there is some error in the server',
           errorDetails: error.toString(),
         })
       );
@@ -179,7 +180,9 @@ function startWebSocketServer() {
         ws.send(JSON.stringify({ type: 'error', message: 'Invalid game state' }));
         return;
       }
-
+      // console.log('Room:', room);
+      // console.log('Data:', data);
+      // console.log('ws', ws);
       const currentPlayerIndex = room.players.findIndex(
         (player) => player.userId.toString() === ws.userId
       );
@@ -190,8 +193,9 @@ function startWebSocketServer() {
 
         if (board[data.index] === ' ') {
           // Record the move
+          // console.log('ws inside selected player', ws);
           const newMove = {
-            player: ws.userId,
+            player: ws.username,
             position: data.index,
             symbol: ws.symbol,
             timestamp: timestamp,
@@ -225,7 +229,8 @@ function startWebSocketServer() {
 
           if (checkWin(updatedBoard)) {
             room.status = 'completed';
-            room.winner = ws.userId;
+            // console.log('Winning board:', ws);
+            room.winner = ws.username;
             room.finalBoard = {
               row1: updatedBoard.slice(0, 3),
               row2: updatedBoard.slice(3, 6),
@@ -312,61 +317,60 @@ function startWebSocketServer() {
     }
   }
 
-  async function handleExit(ws, wss) {
-    try {
-      const room = await Game.findOne({ roomCode: ws.roomCode });
-      if (!room) {
-        ws.send(JSON.stringify({ type: 'error', message: 'Room does not exist' }));
-        return;
-      }
-
-      if (room.status === 'in_progress') {
-        room.status = 'completed';
-        room.completedAt = new Date();
-        await room.save();
-      }
-
-      const playerWs = Array.from(wss.clients).filter((client) => client.roomCode === ws.roomCode);
-
-      playerWs.forEach((client) => {
-        client.send(
-          JSON.stringify({
-            type: 'message',
-            data: 'Game has ended.',
-          })
-        );
-      });
-    } catch (error) {
-      console.error('Exit error:', error);
-    }
-  }
-
   async function handleDisconnect(ws, wss) {
     try {
+      // console.log('Disconnect handler started for user:', ws.username);
       const room = await Game.findOne({ roomCode: ws.roomCode });
+
       if (room) {
-        if (room.status === 'in_progress') {
-          room.status = 'completed';
-          const remainingPlayer = room.players.find(
-            (player) => player.userId.toString() !== ws.userId
-          );
+        // console.log('Found room:', room.roomCode);
+        // console.log('Current room status:', room.status);
+        // console.log('Current players:', room.players);
+
+        if (room.status === 'completed') {
+          // Find remaining player
+          const remainingPlayer = room.players.find((player) => player.username !== ws.username);
+
+          // console.log('Disconnecting player username:', ws.username);
+          // console.log('Found remaining player:', remainingPlayer);
+
           if (remainingPlayer) {
-            room.winner = remainingPlayer.userId;
+            // console.log('Setting winner to:', remainingPlayer.username);
+            // Explicitly set the winner
+            room.winner = remainingPlayer.username;
+
+            // Force mark as modified to ensure save
+            room.markModified('winner');
           }
+
           room.completedAt = new Date();
+
+          // Log room state before save
+          // console.log('Room before save:', {
+          //   status: room.status,
+          //   winner: room.winner,
+          //   completedAt: room.completedAt,
+          // });
+
+          // Save with error handling
+          try {
+            await room.save();
+            // console.log('Room saved successfully');
+            // console.log('Room after save:', await Game.findOne({ roomCode: ws.roomCode }));
+          } catch (saveError) {
+            console.error('Error saving room:', saveError);
+          }
         }
 
         // Remove the disconnected player
-        room.players = room.players.filter((player) => player.userId.toString() !== ws.userId);
+        room.players = room.players.filter((player) => player.username !== ws.username);
 
-        await room.save();
-
-        // Notify remaining player if exists
         const remainingPlayerWs = Array.from(wss.clients).find(
-          (client) => client.userId === room.players[0]?.userId.toString()
+          (client) => client.username === room.players[0]?.username
         );
 
         if (remainingPlayerWs) {
+          // console.log('Sending win message to remaining player:', room.players[0]?.username);
           remainingPlayerWs.send(
             JSON.stringify({
               type: 'message',
@@ -391,6 +395,7 @@ function startWebSocketServer() {
     moves.forEach((move) => {
       board[move.position] = move.symbol;
     });
+    console.log('Board state:', board);
     return board;
   }
 

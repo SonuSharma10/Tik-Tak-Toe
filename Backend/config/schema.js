@@ -14,8 +14,7 @@ const userSchema = new mongoose.Schema({
 
 const moveSchema = new mongoose.Schema({
   player: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    type: String,
     required: true,
   },
   position: {
@@ -39,7 +38,6 @@ const gameSchema = new mongoose.Schema({
   roomCode: {
     type: String,
     required: true,
-    unique: true,
   },
   status: {
     type: String,
@@ -70,8 +68,7 @@ const gameSchema = new mongoose.Schema({
     default: 0,
   },
   winner: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    type: String,
     default: null,
   },
   finalBoard: {
