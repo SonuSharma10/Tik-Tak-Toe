@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const Register = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -29,6 +31,7 @@ const Register = () => {
       // Store token and user ID in local storage
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('userId', response.data.ID);
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data || 'Registration failed');
     }
