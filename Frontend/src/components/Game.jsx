@@ -103,12 +103,14 @@ const Game = () => {
         setGameState((prev) => ({ ...prev, message: data.data }));
         break;
       case 'reset':
-        const player1Name = gameState.players[0]?.username;
-        const player2Name = gameState.players[1]?.username;
+        const player1Name = data.user1;
+        const player2Name = data.user2;
+        // console.log('player1Name:', player1Name);
+        // console.log('player2Name:', player2Name);
         setGameState((prev) => ({
           ...prev,
           status: 'playing',
-          message: `Game Reset!\nNew match started`,
+          message: `Game Reset!\nNew match started between ${player1Name} and ${player2Name}`,
           roomCode: data.roomCode,
         }));
         setBoard(Array(9).fill(''));

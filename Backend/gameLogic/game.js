@@ -303,12 +303,19 @@ function startWebSocketServer() {
 
       const playerWs = Array.from(wss.clients).filter((client) => client.roomCode === ws.roomCode);
 
+      console.log(playerWs);
+      user1 = playerWs[0].username;
+      user2 = playerWs[1].username;
+      console.log('user1:', user1);
+      console.log('user2:', user2);
       playerWs.forEach((client) => {
         client.roomCode = roomCode;
         client.send(
           JSON.stringify({
             type: 'reset',
             roomCode: roomCode,
+            user1,
+            user2,
           })
         );
       });

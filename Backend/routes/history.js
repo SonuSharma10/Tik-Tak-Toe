@@ -9,7 +9,7 @@ router.get('/my-history', auth, async (req, res) => {
       'players.userId': req.user.id,
       status: 'completed',
     }).sort({ completedAt: -1 });
-    console.log('games:', games); //Testing the game object
+    // console.log('games:', games); //Testing the game object
 
     const formattedGames = games.map((game) => ({
       id: game._id,
@@ -56,6 +56,7 @@ router.get('/user/:username', auth, async (req, res) => {
         player: move.player,
         position: move.position,
         symbol: move.symbol,
+        timestamp: move.timestamp,
       })),
       finalBoard: game.finalBoard,
       date: game.completedAt,
