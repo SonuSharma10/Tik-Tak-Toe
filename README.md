@@ -20,7 +20,6 @@ My assignment on Tic Tac Toe game given by LenDenClub.
 - React
 - Tailwind CSS
 - Vite
-- Context API for state management
 
 ### Backend
 - Node.js
@@ -28,8 +27,11 @@ My assignment on Tic Tac Toe game given by LenDenClub.
 - MongoDB
 - JWT for authentication
 
-
-## Directory Structure
+<details>
+<summary> 
+    
+## Directory Structure 
+</summary>
 
 ```
 sonusharma10-tik-tak-toe/
@@ -81,20 +83,44 @@ sonusharma10-tik-tak-toe/
         └── context/
             └── AuthContext.jsx
 ```
+</details>
 
-## .env Update
+## Installation
 
-Before running the project, make sure to rename `.env.example` to `.env` and update the necessary environment variables.  
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/SonuSharma10/Tik-Tak-Toe.git
+   ```
 
-Example `.env` file:  
+2. Navigate to the backend and frontend directories and install dependencies:
+   ```bash
+   cd Backend
+   npm install
+   cd ../Frontend
+   npm install
+   ```
+   
+3. .env Update
+   Before running the project, make sure to rename `.env.example` to `.env` and update the necessary environment variables.
+   Example `.env` file:
+   ```
+    SECRET_KEY = 997766
+    ROTATE = 10
+    MONGO_DB = "mongodb://localhost:27017/{DB_NAME}"  # Replace {DB_NAME} with your database name
+   ```
+   Ensure that the `MONGO_DB` variable points to the correct MongoDB instance and database name.
 
-```
-SECRET_KEY = 997766
-ROTATE = 10
-MONGO_DB = "mongodb://localhost:27017/{DB_NAME}"  # Replace {DB_NAME} with your database name
-```
+4. Run the backend server:
+   ```bash
+   node index.js
+   ```
 
-Ensure that the `MONGO_DB` variable points to the correct MongoDB instance and database name.
+5. Run the frontend:
+   ```bash
+   npm run dev
+   ```
+
+
 
 ## API Calls and Examples
 
@@ -357,44 +383,54 @@ Example username: `12345`
   ```
 </details>
 
----
+## WebSocket Connection
 
-## Installation
+1. WebSocket server is running on port `8080`.
+2. Connect to WebSocket using the URL: `ws://localhost:8080`
+3. To connect two users, they should send the following JSON messages:
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/SonuSharma10/Tik-Tak-Toe.git
+   **Player 1:**
+   ```json
+   {
+     "type": "connect",
+     "userId": "6790bf84c08f7de1bba9a1f5"  //userId of Player
+   }
    ```
 
-2. Navigate to the backend and frontend directories and install dependencies:
-   ```bash
-   cd Backend
-   npm install
-   cd ../Frontend
-   npm install
+   **Player 2:**
+   ```json
+   {
+     "type": "connect",
+     "userId": "678e5a1b08857d3f924c7636"   //userId of Player
+   }
    ```
 
-3. Run the backend server:
-   ```bash
-   node index.js
+4. To start playing, players send their moves:
+
+   **Player 1:**
+   ```json
+   {
+     "type": "move",
+     "index": "6"
+   }
    ```
 
-4. Run the frontend:
-   ```bash
-   npm run dev
+   **Player 2:**
+   ```json
+   {
+     "type": "move",
+     "index": "1"
+   }
    ```
 
-## Technologies Used
+5. If a player disconnects, the other player wins.
+6. To request a rematch or reset the game, any player can send:
+   ```json
+   {
+     "type": "reset"
+   }
+   ```
 
-- **Backend:** Node.js, Express.js, MongoDB
-- **Frontend:** React.js, Vite, Tailwind CSS
-- **Authentication:** JWT (JSON Web Token)
+7. If a game's status is "in-progress" for more than 5 minutes in the database, the game will be deleted automatically.
 
-## Contributing
-
-Contributions are welcome! Feel free to open an issue or submit a pull request.
-
-## License
-
-This project is licensed under the MIT License.
 
