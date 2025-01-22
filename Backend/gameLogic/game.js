@@ -326,23 +326,23 @@ function startWebSocketServer() {
 
   async function handleDisconnect(ws, wss) {
     try {
-      // console.log('Disconnect handler started for user:', ws.username);
+      console.log('Disconnect handler started for user:', ws.username);
       const room = await Game.findOne({ roomCode: ws.roomCode });
 
       if (room) {
-        // console.log('Found room:', room.roomCode);
-        // console.log('Current room status:', room.status);
-        // console.log('Current players:', room.players);
+        console.log('Found room:', room.roomCode);
+        console.log('Current room status:', room.status);
+        console.log('Current players:', room.players);
 
-        if (room.status === 'completed') {
+        if (room.status === 'in_progress') {
           // Find remaining player
           const remainingPlayer = room.players.find((player) => player.username !== ws.username);
 
-          // console.log('Disconnecting player username:', ws.username);
-          // console.log('Found remaining player:', remainingPlayer);
+          console.log('Disconnecting player username:', ws.username);
+          console.log('Found remaining player:', remainingPlayer);
 
           if (remainingPlayer) {
-            // console.log('Setting winner to:', remainingPlayer.username);
+            console.log('Setting winner to:', remainingPlayer.username);
             // Explicitly set the winner
             room.winner = remainingPlayer.username;
 
@@ -351,19 +351,20 @@ function startWebSocketServer() {
           }
 
           room.completedAt = new Date();
+          room.status = 'completed';
 
           // Log room state before save
-          // console.log('Room before save:', {
-          //   status: room.status,
-          //   winner: room.winner,
-          //   completedAt: room.completedAt,
-          // });
+          console.log('Room before save:', {
+            status: room.status,
+            winner: room.winner,
+            completedAt: room.completedAt,
+          });
 
           // Save with error handling
           try {
             await room.save();
-            // console.log('Room saved successfully');
-            // console.log('Room after save:', await Game.findOne({ roomCode: ws.roomCode }));
+            console.log('Room saved successfully');
+            console.log('Room after save:', await Game.findOne({ roomCode: ws.roomCode }));
           } catch (saveError) {
             console.error('Error saving room:', saveError);
           }
@@ -373,11 +374,11 @@ function startWebSocketServer() {
         room.players = room.players.filter((player) => player.username !== ws.username);
 
         const remainingPlayerWs = Array.from(wss.clients).find(
-          (client) => client.username === room.players[0]?.username
+          (client) => client.username === room.players[0].username
         );
 
         if (remainingPlayerWs) {
-          // console.log('Sending win message to remaining player:', room.players[0]?.username);
+          console.log('Sending win message to remaining player:', room.players[0].username);
           remainingPlayerWs.send(
             JSON.stringify({
               type: 'message',

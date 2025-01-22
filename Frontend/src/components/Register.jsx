@@ -32,6 +32,7 @@ const Register = () => {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('userId', response.data.ID);
       navigate('/dashboard');
+      window.location.reload();
     } catch (err) {
       setError(err.response?.data || 'Registration failed');
     }
