@@ -35,7 +35,7 @@ router.get('/my-history', auth, async (req, res) => {
 });
 
 // Get specific user's game history by ID
-router.get('/user/:username', auth, async (req, res) => {
+router.get('/user/:username', async (req, res) => {
   try {
     const games = await Game.find({
       'players.username': req.params.username,
@@ -63,16 +63,18 @@ router.get('/user/:username', auth, async (req, res) => {
     }));
 
     res.json(formattedGames);
+    // console.log(formattedGames);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching user game history' });
   }
 });
 
 // Get all active users
-router.get('/active-users', auth, async (req, res) => {
+router.get('/active-users', async (req, res) => {
   try {
     const users = await User.find({}, 'username');
     res.json(users);
+    // console.log(users);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching users' });
   }
